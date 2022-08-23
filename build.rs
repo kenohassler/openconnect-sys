@@ -1,21 +1,26 @@
-use autotools::Config;
-use bindgen;
 use std::env;
 use std::path::{Path, PathBuf};
 
 fn main() {
     let src_path = extract_tarball("openconnect-9.01").expect("Extracting source tarball failed");
 
-    // check for required libraries
+    // Check for required libraries
     let pkg = pkg_config::Config::new();
-    pkg.probe("zlib").unwrap();
-    pkg.probe("openssl").unwrap();
     pkg.probe("libxml-2.0").unwrap();
+    pkg.probe("zlib").unwrap();
+    let openssl = pkg.probe("openssl");
+    let gnutls = pkg_config::Config::new()
+        .atleast_version("3.2.10")
+        .probe("gnutls");
+    if openssl.is_err() && gnutls.is_err() {
+        panic!("OpenSSL or GnuTLS are required.");
+    }
 
-    // build using autotools
-    let dst = Config::new(src_path)
+    // Build using autotools
+    let dst = autotools::Config::new(src_path)
         .with("vpnc-script", Some("/etc/vpnc/vpnc-script"))
         .disable("nls", None)
+        .without("libpcsclite", None)
         .build();
 
     let lib_path = dst.join("lib");
@@ -37,12 +42,13 @@ fn main() {
         // Tell cargo to invalidate the built crate whenever any of the
         // included header files changed.
         .parse_callbacks(Box::new(bindgen::CargoCallbacks))
-        // don't create bindings for the standard library...
+        // Only create bindings for openconnect...
         .allowlist_type(r#"(\w*oc_\w*)"#)
         .allowlist_function(r#"(\w*openconnect_\w*)"#)
-        //.blocklist_type(r#"__\w*"#)
-        //.blocklist_type("uid_t")
-        //.blocklist_type("time.t")
+        // ... and exclude some libc stuff manually.
+        .blocklist_type(r#"__\w*"#)
+        .blocklist_type("uid_t")
+        .blocklist_type("time.t")
         // Finish the builder and generate the bindings.
         .generate()
         // Unwrap the Result and panic on failure.
