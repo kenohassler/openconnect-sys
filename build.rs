@@ -1,5 +1,5 @@
 use std::env;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 fn main() {
     // Check for required libraries
@@ -10,12 +10,11 @@ fn main() {
         .map(|path| "-I".to_owned() + &path.to_string_lossy());
 
     // Tell cargo to invalidate the built crate whenever the wrapper changes
-    let header = Path::new("src/wrapper.h");
-    println!("cargo:rerun-if-changed={}", header.display());
+    println!("cargo:rerun-if-changed=wrapper.h");
 
     let bindings = bindgen::Builder::default()
         // The input header we would like to generate bindings for.
-        .header(header.to_str().unwrap())
+        .header("wrapper.h")
         // Tell cargo to invalidate the built crate whenever any of the
         // included header files changed.
         .parse_callbacks(Box::new(bindgen::CargoCallbacks))
