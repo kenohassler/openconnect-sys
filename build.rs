@@ -1,47 +1,25 @@
 use std::env;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 fn main() {
-    let src_path = extract_tarball("openconnect-9.01").expect("Extracting source tarball failed");
-
     // Check for required libraries
-    let pkg = pkg_config::Config::new();
-    pkg.probe("libxml-2.0").unwrap();
-    pkg.probe("zlib").unwrap();
-    let openssl = pkg.probe("openssl");
-    let gnutls = pkg_config::Config::new()
-        .atleast_version("3.2.10")
-        .probe("gnutls");
-    if openssl.is_err() && gnutls.is_err() {
-        panic!("OpenSSL or GnuTLS are required.");
-    }
+    let lib = pkg_config::Config::new().probe("openconnect").unwrap();
+    let include_args = lib
+        .include_paths
+        .iter()
+        .map(|path| "-I".to_owned() + &path.to_string_lossy());
 
-    // Build using autotools
-    let dst = autotools::Config::new(src_path)
-        .with("vpnc-script", Some("/etc/vpnc/vpnc-script"))
-        .disable("nls", None)
-        .without("libpcsclite", None)
-        .build();
-
-    let lib_path = dst.join("lib");
-    let include_path = dst.join("include");
-    debug_assert!(lib_path.exists());
-    debug_assert!(include_path.exists());
-
-    // Tell cargo to look for the openconnect library in `lib_path`
-    println!("cargo:rustc-link-search=native={}", lib_path.display());
-    println!("cargo:rustc-link-lib=static=openconnect");
-
-    // Tell cargo to invalidate the built crate whenever the header changes
-    let header = include_path.join("openconnect.h");
-    println!("cargo:rerun-if-changed={}", header.display());
+    // Tell cargo to invalidate the built crate whenever the wrapper changes
+    println!("cargo:rerun-if-changed=wrapper.h");
 
     let bindings = bindgen::Builder::default()
         // The input header we would like to generate bindings for.
-        .header(header.to_str().unwrap())
+        .header("wrapper.h")
         // Tell cargo to invalidate the built crate whenever any of the
         // included header files changed.
         .parse_callbacks(Box::new(bindgen::CargoCallbacks))
+        // Add include paths detected by pkg-config
+        .clang_args(include_args)
         // Only create bindings for openconnect...
         .allowlist_type(r#"(\w*oc_\w*)"#)
         .allowlist_function(r#"(\w*openconnect_\w*)"#)
@@ -59,17 +37,4 @@ fn main() {
     bindings
         .write_to_file(out_path.join("bindings.rs"))
         .expect("Couldn't write bindings!");
-}
-
-/// Uncompress the tarball in `include/` to a folder in `target/cache/`.
-fn extract_tarball(name: &str) -> Result<PathBuf, std::io::Error> {
-    use flate2::read::GzDecoder;
-    use std::fs::File;
-    use tar::Archive;
-
-    let tarball = Path::new("include").join(name.to_owned() + ".tar.gz");
-    let dst = Path::new("target/cache");
-    Archive::new(GzDecoder::new(File::open(tarball)?)).unpack(dst)?;
-
-    Ok(dst.join(name))
 }

@@ -1,35 +1,28 @@
 # openconnect-sys
 
-This crate contains auto-generated FFI bindings for libopenconnect.
+This crate provides auto-generated FFI bindings for [OpenConnect](https://www.infradead.org/openconnect),
+the open client for Cisco AnyConnect.
 
 ## Dependencies
 
-At the moment, this crate links openconnect to your system-provided versions of
-* libxml2
-* zlib
-* OpenSSL or GnuTLS *(>=3.2.10)*.
-
-This may change in future versions.
+The crate links dynamically to your local version of `libopenconnect`.
+In the build process, `pkg-config` is used to find the library.
 
 ### macOS
 
-Install GnuTLS using homebrew:
+Install using [Homebrew](https://brew.sh):
 ```sh
-brew install gnutls
+brew install openconnect pkg-config
 ```
-The rest is included with the developer tools.
 
 ### Debian-based Linux
 
 Install using apt:
 ```sh
-sudo apt install libxml2-dev zlib1g-dev libssl-dev
+sudo apt install libopenconnect-dev pkg-config
 ```
 
 ## License
 
-Openconnect is licensed under [GNU LGPL v2.1](https://www.gnu.org/licenses/old-licenses/lgpl-2.1-standalone.html).
-
-## Credits
-
-All credits go to [OpenConnect](https://www.infradead.org/openconnect).
+OpenConnect is licensed under [GNU LGPL v2.1](https://www.gnu.org/licenses/old-licenses/lgpl-2.1-standalone.html).
+This crate links dynamically to the library, allowing the crate to be permissively licensed (MIT OR Apache-2.0).
