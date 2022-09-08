@@ -24,6 +24,6 @@ sudo apt install libopenconnect-dev pkg-config
 
 ## License
 
-In order to avoid licensing problems (OpenConnect is licensed under LGPL v2.1),
-we only allow dynamic linking.
-This ensures that the crate can be permissively licensed (MIT+Apache2).
+OpenConnect is licensed under [GNU LGPL v2.1](https://www.gnu.org/licenses/old-licenses/lgpl-2.1-standalone.html).
+This crate links dynamically to the library,
+allowing the crate to be permissively licensed (MIT OR Apache-2.0).
