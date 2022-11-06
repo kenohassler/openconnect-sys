@@ -18,15 +18,20 @@ fn main() {
         // Tell cargo to invalidate the built crate whenever any of the
         // included header files changed.
         .parse_callbacks(Box::new(bindgen::CargoCallbacks))
-        // Add include paths detected by pkg-config
+        // Add include paths detected by pkg-config; also allow comments.
         .clang_args(include_args)
+        .clang_arg("-fparse-all-comments")
         // Only create bindings for openconnect...
-        .allowlist_type(r#"(\w*oc_\w*)"#)
         .allowlist_function(r#"(\w*openconnect_\w*)"#)
+        .allowlist_type(r#"(\w*oc_\w*)"#)
+        .allowlist_var(r#"(\w*OC_\w*)"#)
         // ... and exclude some libc stuff manually.
         .blocklist_type(r#"__\w*"#)
         .blocklist_type("uid_t")
         .blocklist_type("time.t")
+        .blocklist_type("addrinfo")
+        // Put constants from C enums into their own modules.
+        .default_enum_style(bindgen::EnumVariation::ModuleConsts)
         // Finish the builder and generate the bindings.
         .generate()
         // Unwrap the Result and panic on failure.
