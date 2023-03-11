@@ -25,6 +25,7 @@ fn main() {
         .allowlist_function(r#"(\w*openconnect_\w*)"#)
         .allowlist_type(r#"(\w*oc_\w*)"#)
         .allowlist_var(r#"(\w*OC_\w*)"#)
+        .allowlist_var(r#"(\w*PRG_\w*)"#)
         // ... and exclude some libc stuff manually.
         .blocklist_type(r#"__\w*"#)
         .blocklist_type("uid_t")
